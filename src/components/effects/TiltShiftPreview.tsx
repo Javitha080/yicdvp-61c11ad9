@@ -14,11 +14,12 @@ export default function TiltShiftPreview({ active }: { active: boolean }) {
       try {
         const [THREE, { TiltShift }] = await Promise.all([import("three"), import("tiltshift-in-html")]);
         if (cancelled) return;
+        const texture = await new THREE.TextureLoader().loadAsync(image.currentSrc || image.src);
+        if (cancelled) { texture.dispose(); return; }
         const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: false });
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
         camera.position.z = 2;
-        const texture = new THREE.Texture(image);
         texture.colorSpace = THREE.SRGBColorSpace;
         texture.needsUpdate = true;
         const geometry = new THREE.PlaneGeometry(1, 1);
@@ -38,6 +39,10 @@ export default function TiltShiftPreview({ active }: { active: boolean }) {
             const scale = Math.max(viewHeight * camera.aspect / aspect, viewHeight);
             plane.scale.set(scale * aspect, scale, 1);
             tilt.syncSize(); tilt.render(scene, camera);
+            const gl = renderer.getContext();
+            const pixel = new Uint8Array(4);
+            gl.readPixels(Math.floor(renderer.domElement.width / 2), Math.floor(renderer.domElement.height / 2), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
+            if (gl.getError() !== gl.NO_ERROR || pixel[3] === 0) return;
             host.dataset.rendered = "true";
           } catch { host.removeAttribute("data-rendered"); }
         };

@@ -6,10 +6,7 @@ import { isLowPowerDevice, prefersReducedMotion } from "@/lib/motion";
 let activeRoots = 0;
 
 /**
- * LiquidGlassProvider (Legacy Wrapper)
- * WebGL backend removed — this is now a plain passthrough div that preserves
- * layout/className for existing callers (Footer, home/Hero). Keep the file so
- * those imports don't break; do NOT reintroduce WebGL here.
+ * Scoped, visibility-managed ybouane liquidglass with CSS fallback.
  */
 interface LiquidGlassProviderProps {
   children: React.ReactNode;
@@ -46,7 +43,7 @@ const LiquidGlassProvider = memo(({ children, className, config = {}, enabled = 
       try {
         const { LiquidGlass } = await import("@ybouane/liquidglass");
         if (cancelled || current !== generation) { activeRoots -= 1; return; }
-        const created = await LiquidGlass.init({ root, glassElements: surfaces, defaults: { ...JSON.parse(configKey), floating: false } });
+        const created = await LiquidGlass.init({ root, glassElements: surfaces, defaults: { ...JSON.parse(configKey), floating: false, opacity: 0.22, fresnel: 0.08, cornerRadius: 16, zRadius: 8 } });
         if (cancelled || current !== generation || !visible || document.hidden) { created.destroy(); activeRoots -= 1; return; }
         instance = created; root.dataset.glassReady = "true";
       } catch { activeRoots -= 1; }
