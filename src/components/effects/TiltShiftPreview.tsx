@@ -30,7 +30,8 @@ export default function TiltShiftPreview({ active }: { active: boolean }) {
         const draw = () => {
           if (cancelled || document.hidden) return;
           try {
-            const { width, height } = host.getBoundingClientRect();
+            const width = host.clientWidth;
+            const height = host.clientHeight;
             if (!width || !height) return;
             renderer.setPixelRatio(1); renderer.setSize(width, height);
             camera.aspect = width / height; camera.updateProjectionMatrix();

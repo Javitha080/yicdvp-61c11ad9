@@ -13,11 +13,10 @@ interface SmoothScrollProps {
  *
  * Deliberately NOT enabled when:
  *  - the visitor asked for reduced motion,
- *  - the device is touch-based or low-powered (native scrolling is smoother
- *    there, and hijacking touch scroll is what made the page feel "stuck"),
  *  - the route is an admin/CMS route, where long forms, dialogs and nested
  *    scroll containers fight the virtual scroller.
  *
+ * Touch gestures remain native (syncTouch is disabled).
  * ScrollTrigger positions are refreshed after fonts/images settle and on
  * debounced resizes, so reveal animations can't measure stale positions and
  * leave sections blank. Mobile URL-bar resizes are ignored to stop thrash.
