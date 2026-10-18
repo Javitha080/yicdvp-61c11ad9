@@ -1,19 +1,10 @@
 import { useEffect } from "react";
-
-type LenisLike = {
-  stop: () => void;
-  start: () => void;
-};
-
-const getLenis = (): LenisLike | undefined => {
-  if (typeof window === "undefined") return undefined;
-  return (window as unknown as { lenis?: LenisLike }).lenis;
-};
+import { getLenis } from "@/lib/scroll";
 
 const isOpenDialog = (el: Element) => {
   const role = el.getAttribute("role");
   const state = el.getAttribute("data-state");
-  return (role === "dialog" || role === "alertdialog") && state === "open";
+  return (role === "dialog" || role === "alertdialog") && state !== "closed" && !el.hasAttribute("hidden") && el.getAttribute("aria-hidden") !== "true";
 };
 
 /**
