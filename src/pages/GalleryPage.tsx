@@ -351,7 +351,7 @@ const GalleryPage = () => {
                           sizeClasses[size]
                         )}
                       >
-                        <MediaTile item={item} priority={index < 4} />
+                        <MediaTile item={item} priority={index < 4} tiltShift />
                         <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/20 to-transparent pointer-events-none" />
                         <div className="absolute top-4 right-4 size-11 rounded-full bg-background/40 backdrop-blur-md border border-white/15 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
                           <ArrowUpRight className="size-4" />

@@ -1,6 +1,7 @@
 import { useEffect, ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
-import { prefersReducedMotion, isTouchLike, isLowPowerDevice } from '@/lib/motion';
+import { prefersReducedMotion } from '@/lib/motion';
+import type Lenis from 'lenis';
 import { setGlobalLenis } from '@/lib/scroll';
 
 interface SmoothScrollProps {
@@ -27,7 +28,7 @@ export default function SmoothScroll({ children }: SmoothScrollProps) {
 
   // oxlint-disable-next-line react-doctor/effect-needs-cleanup
   useEffect(() => {
-    let lenisInstance: { destroy: () => void; raf: (t: number) => void; on: (e: string, cb: () => void) => void } | undefined;
+    let lenisInstance: Lenis | undefined;
     let gsapInstance: typeof import('gsap')['gsap'] | undefined;
     let tickerCallback: ((time: number) => void) | undefined;
     let cancelled = false;
@@ -65,6 +66,7 @@ export default function SmoothScroll({ children }: SmoothScrollProps) {
     };
 
     const init = async () => {
+      if (isAdminRoute || prefersReducedMotion()) return;
       const [{ gsap }, { ScrollTrigger }] = await Promise.all([
         import('gsap'),
         import('gsap/ScrollTrigger'),
@@ -75,35 +77,25 @@ export default function SmoothScroll({ children }: SmoothScrollProps) {
       gsap.registerPlugin(ScrollTrigger);
       setupRefreshers(ScrollTrigger);
 
-      const skipSmooth =
-        isAdminRoute ||
-        prefersReducedMotion() ||
-        isTouchLike() ||
-        isLowPowerDevice() ||
-        window.innerWidth < 1024;
-
-      // Native scrolling everywhere smooth scrolling would hurt. ScrollTrigger
-      // still works — it just listens to the real scroller.
-      if (skipSmooth) return;
-
       const Lenis = await import('lenis').then((m) => m.default);
       if (cancelled) return;
 
       lenisInstance = new Lenis({
-        duration: 1.1,
+        duration: 0.9,
         easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
         orientation: 'vertical',
         gestureOrientation: 'vertical',
         smoothWheel: true,
-        wheelMultiplier: 1.05,
+        wheelMultiplier: 1,
+        syncTouch: false,
         // Leave dialogs, dropdowns and code blocks to the browser.
         prevent: (node: Element) =>
-          Boolean(node.closest?.('[data-lenis-prevent], [role="dialog"], [data-radix-scroll-area-viewport]')),
-      } as never) as typeof lenisInstance;
+          Boolean(node.closest?.('[data-lenis-prevent], [role="dialog"], [role="alertdialog"], [data-radix-scroll-area-viewport], textarea, select')),
+      });
 
       (window as unknown as { lenis?: unknown }).lenis = lenisInstance;
-      setGlobalLenis(lenisInstance as never);
-      lenisInstance!.on('scroll', ScrollTrigger.update);
+      setGlobalLenis(lenisInstance);
+      lenisInstance.on('scroll', ScrollTrigger.update);
 
       tickerCallback = (time: number) => lenisInstance?.raf(time * 1000);
       gsap.ticker.add(tickerCallback);
