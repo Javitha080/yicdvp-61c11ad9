@@ -3,6 +3,7 @@ import { useRef, useState, useEffect, useCallback, lazy, Suspense } from "react"
 import { Play, Instagram } from "lucide-react";
 import { cn } from "@/lib/utils";
 import OptimizedImage from "@/components/common/OptimizedImage";
+import TiltShiftPreview from "@/components/effects/TiltShiftPreview";
 import { useInViewport } from "@/hooks/useInViewport";
 import {
   extractYouTubeId,
@@ -57,6 +58,7 @@ interface MediaTileProps {
   className?: string;
   /** Inline only: respect autoplay/loop settings from item. */
   autoplaySettings?: boolean;
+  tiltShift?: boolean;
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -74,13 +76,14 @@ const MediaTile = ({
   priority = false,
   className,
   autoplaySettings = false,
+  tiltShift = false,
 }: MediaTileProps) => {
   const source = detectMediaSource(item.media_type, item.video_url);
   const thumb = resolveThumb(item);
   const { ref, inView } = useInViewport<HTMLDivElement>({ rootMargin: "300px", once: !inline });
   const [hovering, setHovering] = useState(false);
 
-  const handleEnter = useCallback(() => hoverPreview && setHovering(true), [hoverPreview]);
+  const handleEnter = useCallback(() => (hoverPreview || tiltShift) && setHovering(true), [hoverPreview, tiltShift]);
   const handleLeave = useCallback(() => setHovering(false), []);
 
   // Inline mode (lightbox) — render the actual playable embed.
@@ -148,6 +151,7 @@ const MediaTile = ({
           )}
 
           {/* Hover preview for all videos */}
+          {tiltShift && source === "image" && thumb && <TiltShiftPreview active={hovering} />}
           {hoverPreview && hovering && (source === "youtube" || source === "vimeo" || source === "direct-video") && item.video_url && (
             <div className="absolute inset-0 size-full pointer-events-none z-10 transition-opacity duration-500 opacity-100">
               <Suspense fallback={null}>
