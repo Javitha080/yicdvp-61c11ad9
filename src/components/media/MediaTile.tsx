@@ -83,7 +83,9 @@ const MediaTile = ({
   const { ref, inView } = useInViewport<HTMLDivElement>({ rootMargin: "300px", once: !inline });
   const [hovering, setHovering] = useState(false);
 
-  const handleEnter = useCallback(() => (hoverPreview || tiltShift) && setHovering(true), [hoverPreview, tiltShift]);
+  const handleEnter = useCallback(() => {
+    if ((hoverPreview || tiltShift) && window.matchMedia("(hover: hover) and (pointer: fine)").matches) setHovering(true);
+  }, [hoverPreview, tiltShift]);
   const handleLeave = useCallback(() => setHovering(false), []);
 
   // Inline mode (lightbox) — render the actual playable embed.
