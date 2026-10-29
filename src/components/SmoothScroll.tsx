@@ -1,6 +1,6 @@
 import { useEffect, ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
-import { prefersReducedMotion } from '@/lib/motion';
+import { useReducedMotionPreference } from '@/hooks/useReducedMotionPreference';
 import type Lenis from 'lenis';
 import { setGlobalLenis } from '@/lib/scroll';
 
@@ -24,6 +24,7 @@ interface SmoothScrollProps {
 export default function SmoothScroll({ children }: SmoothScrollProps) {
   const { pathname } = useLocation();
   const isAdminRoute = pathname.startsWith('/admin') || pathname.startsWith('/student');
+  const reducedMotion = useReducedMotionPreference();
 
   // oxlint-disable-next-line react-doctor/effect-needs-cleanup
   useEffect(() => {
@@ -49,7 +50,10 @@ export default function SmoothScroll({ children }: SmoothScrollProps) {
       cleanups.push(() => window.removeEventListener('load', onLoad));
 
       let resizeTimer: number | undefined;
+      let lastWidth = window.innerWidth;
       const onResize = () => {
+        if (window.innerWidth === lastWidth && window.matchMedia('(pointer: coarse)').matches) return;
+        lastWidth = window.innerWidth;
         window.clearTimeout(resizeTimer);
         resizeTimer = window.setTimeout(refresh, 250);
       };
@@ -65,7 +69,7 @@ export default function SmoothScroll({ children }: SmoothScrollProps) {
     };
 
     const init = async () => {
-      if (isAdminRoute || prefersReducedMotion()) return;
+      if (isAdminRoute || reducedMotion) return;
       const [{ gsap }, { ScrollTrigger }] = await Promise.all([
         import('gsap'),
         import('gsap/ScrollTrigger'),
@@ -92,7 +96,6 @@ export default function SmoothScroll({ children }: SmoothScrollProps) {
           Boolean(node.closest?.('[data-lenis-prevent], [role="dialog"], [role="alertdialog"], [data-radix-scroll-area-viewport], textarea, select')),
       });
 
-      (window as unknown as { lenis?: unknown }).lenis = lenisInstance;
       setGlobalLenis(lenisInstance);
       lenisInstance.on('scroll', ScrollTrigger.update);
 
@@ -102,7 +105,7 @@ export default function SmoothScroll({ children }: SmoothScrollProps) {
       // frame cascade into visible scroll stutter.
     };
 
-    init();
+    void init().catch(() => { /* Native scrolling remains available if an effect cannot load. */ });
 
     return () => {
       cancelled = true;
@@ -110,9 +113,8 @@ export default function SmoothScroll({ children }: SmoothScrollProps) {
       if (gsapInstance && tickerCallback) gsapInstance.ticker.remove(tickerCallback);
       if (lenisInstance) lenisInstance.destroy();
       setGlobalLenis(undefined);
-      delete (window as unknown as { lenis?: unknown }).lenis;
     };
-  }, [isAdminRoute]);
+  }, [isAdminRoute, reducedMotion]);
 
   return <>{children}</>;
 }

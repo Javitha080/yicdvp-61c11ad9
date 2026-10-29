@@ -5,6 +5,8 @@ import { useGSAP } from "@gsap/react";
 import { cn } from "@/lib/utils";
 import { ChevronDown } from "lucide-react";
 import { clubLogo } from "@/components/ClubLogo";
+import { getLenis } from "@/lib/scroll";
+import { useReducedMotionPreference } from "@/hooks/useReducedMotionPreference";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
@@ -15,16 +17,17 @@ export default function GSAPLoader() {
   const bgRef = useRef<HTMLDivElement>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasScrolledPast, setHasScrolledPast] = useState(false);
+  const reducedMotion = useReducedMotionPreference();
 
   // Preload Simulation
   useEffect(() => {
+    if (reducedMotion || hasScrolledPast) return;
+    const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     
     // Stop Lenis if it exists
     const tryStopLenis = () => {
-      if ((window as any).lenis) {
-         (window as any).lenis.stop();
-      }
+      getLenis()?.stop();
     };
     tryStopLenis();
     // In case Lenis loads after this component mounts
@@ -52,22 +55,25 @@ export default function GSAPLoader() {
     window.addEventListener('keydown', blockKeyScroll, { passive: false, capture: true });
 
     let currentProgress = 0;
+    let completionTimer: ReturnType<typeof setTimeout> | undefined;
+    const release = () => {
+      document.body.style.overflow = previousOverflow;
+      clearInterval(lenisInterval);
+      if (!document.querySelector('[role="dialog"]:not([aria-hidden="true"]):not([hidden]), [role="alertdialog"]:not([aria-hidden="true"]):not([hidden])')) getLenis()?.start();
+      window.removeEventListener('wheel', blockScroll, true);
+      window.removeEventListener('touchmove', blockScroll, true);
+      window.removeEventListener('DOMMouseScroll', blockScroll, true);
+      window.removeEventListener('keydown', blockKeyScroll, true);
+    };
     const interval = setInterval(() => {
-      currentProgress += Math.random() * 8;
+      currentProgress += 10;
       if (currentProgress >= 100) {
         currentProgress = 100;
         clearInterval(interval);
-        setTimeout(() => {
+        completionTimer = setTimeout(() => {
           setIsLoaded(true);
-          document.body.style.overflow = "";
-          clearInterval(lenisInterval);
-          if ((window as any).lenis) (window as any).lenis.start();
-          
-          window.removeEventListener('wheel', blockScroll, { capture: true } as any);
-          window.removeEventListener('touchmove', blockScroll, { capture: true } as any);
-          window.removeEventListener('DOMMouseScroll', blockScroll, { capture: true } as any);
-          window.removeEventListener('keydown', blockKeyScroll, { capture: true } as any);
-        }, 500);
+          release();
+        }, 200);
       }
       setProgress(currentProgress);
     }, 80);
@@ -75,19 +81,14 @@ export default function GSAPLoader() {
     return () => {
       clearInterval(interval);
       clearInterval(lenisInterval);
-      document.body.style.overflow = "";
-      if ((window as any).lenis) (window as any).lenis.start();
-      
-      window.removeEventListener('wheel', blockScroll, { capture: true } as any);
-      window.removeEventListener('touchmove', blockScroll, { capture: true } as any);
-      window.removeEventListener('DOMMouseScroll', blockScroll, { capture: true } as any);
-      window.removeEventListener('keydown', blockKeyScroll, { capture: true } as any);
+      clearTimeout(completionTimer);
+      release();
     };
-  }, []);
+  }, [reducedMotion, hasScrolledPast]);
 
   // GSAP Scroll Animation
   useGSAP(() => {
-    if (!isLoaded || !containerRef.current || hasScrolledPast) return;
+    if (reducedMotion || !isLoaded || !containerRef.current || hasScrolledPast) return;
 
     const container = containerRef.current;
     const initialHeight = container.offsetHeight;
@@ -107,8 +108,9 @@ export default function GSAPLoader() {
 
           // Reset scroll to 0 immediately without stopping lenis
           // This allows lenis to actually process the scrollTo command and keeps natural momentum
-          if ((window as any).lenis) {
-            (window as any).lenis.scrollTo(0, { immediate: true });
+          const lenis = getLenis();
+          if (lenis) {
+            lenis.scrollTo(0, { immediate: true });
           } else {
             window.scrollTo(0, 0);
           }
@@ -162,12 +164,12 @@ export default function GSAPLoader() {
       },
     });
 
-  }, { dependencies: [isLoaded, hasScrolledPast], revertOnUpdate: true });
+  }, { dependencies: [isLoaded, hasScrolledPast, reducedMotion], revertOnUpdate: true });
 
-  if (hasScrolledPast) return null;
+  if (hasScrolledPast || reducedMotion) return null;
 
   return (
-    <div ref={containerRef} className="relative w-full h-[250vh] z-[9999]">
+    <div ref={containerRef} data-scroll-intro className={cn("relative w-full h-[250vh] z-[9999]", isLoaded && "pointer-events-none")}>
       <div
         ref={bgRef}
         className="sticky top-0 left-0 w-full h-screen bg-black flex flex-col items-center justify-center overflow-hidden"

@@ -61,7 +61,8 @@ export function scrollToTarget(target: Target, options: ScrollToTargetOptions = 
   const lenis = getLenis();
 
   if (lenis) {
-    lenis.scrollTo(resolved, { offset, immediate, duration, force: immediate });
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    lenis.scrollTo(resolved, { offset, immediate: immediate || reduce, duration, force: immediate });
     return;
   }
 

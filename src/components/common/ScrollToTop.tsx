@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { m, AnimatePresence } from "framer-motion";
 import { ArrowUp } from "lucide-react";
+import { scrollToTop as scrollPageToTop } from "@/lib/scroll";
 
 const ScrollToTop = () => {
   const [visible, setVisible] = useState(false);
@@ -15,7 +16,7 @@ const ScrollToTop = () => {
   }, []);
 
   const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    scrollPageToTop();
   };
 
   return (
@@ -27,7 +28,7 @@ const ScrollToTop = () => {
           exit={{ opacity: 0, scale: 0.8, y: 20 }}
           transition={{ type: "spring", stiffness: 260, damping: 20 }}
           onClick={scrollToTop}
-          className="fixed bottom-6 right-6 z-40 group"
+          className="fixed bottom-24 right-6 z-40 group"
           aria-label="Scroll to top"
         >
           {/* Glow ring */}
