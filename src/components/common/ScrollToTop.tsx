@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { m, AnimatePresence } from "framer-motion";
 import { ArrowUp } from "lucide-react";
+import { scrollToTop as scrollPageToTop } from "@/lib/scroll";
 
 const ScrollToTop = () => {
   const [visible, setVisible] = useState(false);
@@ -15,7 +16,7 @@ const ScrollToTop = () => {
   }, []);
 
   const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    scrollPageToTop();
   };
 
   return (
