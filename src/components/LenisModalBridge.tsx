@@ -55,7 +55,7 @@ export default function LenisModalBridge() {
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ["data-state", "role"],
+      attributeFilter: ["data-state", "role", "hidden", "aria-hidden"],
     });
 
     update();
